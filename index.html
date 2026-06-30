@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Nudge AI — Your AI-powered productivity assistant that pushes you to take action, not just plan." />
+  <title>Nudge AI — Get Things Done</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="calendar.css" />
+</head>
+
+<body>
+
+  <!-- Ambient floating particles (JS-generated, mood-colored) -->
+  <div class="mood-particles" id="mood-particles"></div>
+
+  <!-- Focus Mode Overlay — subtle dim during active task -->
+  <div class="focus-mode-overlay" id="focus-mode-overlay"></div>
+
+  <!-- ========== CURSOR DOT CLUSTER — Home only ========== -->
+  <div id="cursor-cluster" aria-hidden="true"></div>
+
+
+  <!-- ========== TOP NAVIGATION BAR ========== -->
+  <nav class="top-nav" id="top-nav">
+    <div class="tn-logo">
+      <div class="tn-logo-mark" aria-label="Nudge AI">
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none" aria-hidden="true">
+          <polyline points="1,13 1,1 9,9 9,1" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="9,13 17,1" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="tn-brand">Nudge AI</span>
+    </div>
+    <div class="tn-tabs" id="tn-tabs">
+      <button class="tn-tab tn-active" id="tn-home" type="button" onclick="goToHome()">Home</button>
+      <button class="tn-tab" id="tn-tasks" type="button" onclick="goToTasks()">Tasks</button>
+      <button class="tn-tab" id="tn-calendar" type="button" onclick="goToCalendar()">Calendar</button>
+      <button class="tn-tab" id="tn-stats" type="button" onclick="goToStats()">Stats</button>
+    </div>
+    <div class="tn-right">
+      <div class="tn-mood-pill">
+        <span class="tn-mood-label">Mood</span>
+        <span class="tn-mood-val" id="tn-mood-val">Good ↓</span>
+      </div>
+      <div class="tn-avatar" id="tn-avatar">⚡</div>
+    </div>
+  </nav>
+
+  <!-- ========== BOTTOM TAB BAR (mobile only) ========== -->
+  <nav class="tab-bar" id="tab-bar">
+    <button class="tab-btn tab-active" id="tab-home" type="button" onclick="goToHome()">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">Home</span>
+    </button>
+    <button class="tab-btn" id="tab-tasks" type="button" onclick="goToTasks()">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">Tasks</span>
+      <span class="tab-badge" id="tab-tasks-badge" style="display:none"></span>
+    </button>
+    <button class="tab-btn" id="tab-calendar" type="button" onclick="goToCalendar()">
+      <span class="tab-icon">📅</span>
+      <span class="tab-label">Calendar</span>
+    </button>
+    <button class="tab-btn" id="tab-stats" type="button" onclick="goToStats()">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">Stats</span>
+    </button>
+  </nav>
+
+
+
+  <!-- ========== HOME / DASHBOARD SCREEN ========== -->
+  <div id="screen-input" class="screen active">
+    <div class="home-grid">
+
+      <!-- ===== LEFT: HERO COLUMN ===== -->
+      <section class="hero-col">
+        <!-- Particle Globe Canvas -->
+        <canvas id="globe-canvas" class="globe-canvas"></canvas>
+
+        <!-- Hero text + CTA, overlaid on globe -->
+        <div class="hero-overlay">
+          <div class="hero-headline">
+            <span class="hh-white">Let’s</span>
+            <span class="hh-purple">make today</span>
+            <span class="hh-orange">count.</span>
+          </div>
+          <p class="hero-sub">Focus on what matters.<br>Nudge AI is here to guide you.</p>
+          <div class="hero-cta-group">
+            <button class="btn-coach-primary" type="button" onclick="openAICoach()" data-testid="hero-ai-coach-btn">
+              <span class="bcp-icon" aria-hidden="true">⚡</span>
+              <span class="bcp-label">Plan with AI Coach</span>
+              <span class="bcp-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="btn-quick-add" type="button" onclick="openTaskInput()" data-testid="hero-quick-add-btn">
+              <span class="bqa-plus" aria-hidden="true">+</span> Quick add
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom area: streak + quote -->
+        <div class="hero-bottom">
+
+          <!-- Dashboard streak card -->
+          <div class="dash-streak" id="dash-streak">
+            <div class="ds-left">
+              <span class="ds-fire">🔥</span>
+              <div class="ds-text">
+                <div class="ds-title" id="ds-title">Start your streak</div>
+                <div class="ds-sub">Keep going! You’re doing great.</div>
+              </div>
+            </div>
+            <div class="ds-week" id="ds-week"></div>
+          </div>
+
+          <!-- Motivational quote — static, never overwritten by JS -->
+          <div class="dash-quote">
+            <span class="dq-icon">❝</span>
+            <span class="dq-text">Discipline is choosing between what you want now and <span class="dq-accent">what you want most.</span></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== RIGHT: SIDEBAR COLUMN ===== -->
+      <aside class="home-sidebar">
+
+        <!-- AI Assistant — premium interactive card with Nudge mascot -->
+        <div class="dash-assistant" id="home-ai-assistant" aria-label="Nudge AI Assistant">
+          <div class="da-glow-ring" aria-hidden="true"></div>
+
+          <!-- Nudge mascot — the app's AI coach character -->
+          <div class="da-mascot" aria-hidden="true">
+            <div class="da-mascot-body">
+              <div class="da-mascot-aura"></div>
+              <div class="da-mascot-antenna"></div>
+              <div class="da-mascot-head">
+                <div class="da-mascot-eyes">
+                  <span class="da-mascot-eye"></span>
+                  <span class="da-mascot-eye"></span>
+                </div>
+                <div class="da-mascot-cheek da-mascot-cheek-l"></div>
+                <div class="da-mascot-cheek da-mascot-cheek-r"></div>
+              </div>
+              <div class="da-mascot-torso">
+                <div class="da-mascot-core">⚡</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="da-header">
+            <div class="da-header-text">
+              <div class="da-label">Nudge AI</div>
+              <div class="da-subtitle">Your execution coach</div>
+            </div>
+          </div>
+
+          <!-- Thinking phase — shown on Home load before the final message -->
+          <div class="da-thinking" id="da-thinking" aria-live="polite">
+            <span class="da-thinking-dot"></span>
+            <span class="da-thinking-text" id="da-thinking-text"></span>
+          </div>
+
+          <!-- Final typed message -->
+          <div class="da-message-wrap" id="da-message-wrap">
+            <p class="da-message" id="da-message"></p>
+            <span class="da-cursor" id="da-cursor" aria-hidden="true"></span>
+          </div>
+
+          <button class="da-cta" id="da-cta" type="button" onclick="openAICoach()">
+            <span class="da-cta-icon">⚡</span>
+            <span class="da-cta-label" id="da-cta-label">Ask AI Coach</span>
+            <span class="da-cta-arrow">→</span>
+          </button>
+        </div>
+
+        <!-- Active task quick-resume + Today's Plan — scrollable section -->
+        <div class="home-sidebar-scroll">
+
+          <!-- Active task quick-resume -->
+          <div id="home-task-nudge"></div>
+
+          <!-- Today's Plan -->
+          <div class="dash-today">
+            <div class="dt-header">
+              <span class="dt-title">Today’s Plan</span>
+              <button class="dt-view-all" type="button" onclick="goToTasks()">View all</button>
+            </div>
+            <div id="today-plan-list" class="dt-list"></div>
+          </div>
+
+        </div>
+
+      </aside>
+    </div>
+
+    <!-- Legacy compat elements (JS reads these IDs / classes) -->
+    <div class="streak-badge" id="streak-badge-home" style="display:none">🔥 <span>Start your streak</span></div>
+  </div>
+
+
+  <!-- ========== TASK BREAKDOWN SCREEN ========== -->
+  <div id="screen-task" class="screen">
+    <div class="container">
+
+      <div class="top-bar">
+        <button class="btn-back" type="button" id="btn-back" onclick="confirmLeaveTask('home')"><span>←</span> Home</button>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn-back" type="button" onclick="confirmLeaveTask('tasks')" style="color:var(--accent-soft);border-color:rgba(124,110,245,0.3)">📋 Tasks</button>
+          <div class="streak-badge">🔥 <span>Start your streak</span></div>
+        </div>
+      </div>
+
+      <!-- Mood Banner — feedback while working -->
+      <div class="mood-banner" id="mood-banner">
+        <span class="mood-emoji" id="mood-emoji">🙂</span>
+        <span class="mood-text" id="mood-text">Good job. Keep going.</span>
+      </div>
+
+      <!-- Task Title + Progress Bar -->
+      <div class="task-header">
+        <h2 class="task-title" id="task-title-display"></h2>
+        <div class="progress-wrap">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <span class="progress-label" id="progress-label">0 / 0 done</span>
+        </div>
+      </div>
+
+      <!-- Current Step Focus Box -->
+      <div class="action-box" id="action-box">
+        <div class="action-box-header">
+          <div class="action-label" id="action-step-label">Now Focus On</div>
+          <div class="dual-timer" id="dual-timer">
+            <div class="timer-block">
+              <span class="timer-label">Step</span>
+              <span class="timer-value" id="step-timer-display">0:00</span>
+            </div>
+            <div class="timer-divider"></div>
+            <div class="timer-block">
+              <span class="timer-label">Total</span>
+              <span class="timer-value" id="task-timer-display">0:00</span>
+            </div>
+          </div>
+          <div class="session-timer" id="session-timer">⏱ 0:00</div>
+        </div>
+        <div class="action-step" id="action-step-text">—</div>
+        <div class="focus-timer">Focus block: <strong id="focus-timer-text">25 min</strong></div>
+        <!-- Overtime nudge — shown when step timer exceeds focus block -->
+        <div id="overtime-nudge-container"></div>
+        <div class="action-btns">
+          <button class="btn-mark-done" type="button" id="btn-mark-done" onclick="markCurrentDone()">
+            ✓ Mark as Done
+          </button>
+          <button class="btn-task-snooze" type="button" id="btn-task-snooze" onclick="snoozeActiveTask()">
+            😴 Snooze
+          </button>
+          <button class="btn-skip" type="button" id="btn-next" onclick="nextStep()">
+            Skip ↷
+          </button>
+        </div>
+      </div>
+
+      <!-- Step List -->
+      <div class="steps-section">
+        <h3 class="steps-heading">Your steps</h3>
+        <p class="steps-note">✔️ Mark complete only if you actually did it.</p>
+        <!-- Skipped-prompt injected here by JS if needed -->
+        <ul class="step-list" id="step-list"></ul>
+      </div>
+
+      <!-- Completion Card — shown when all steps done -->
+      <div class="completion-card" id="completion-card">
+        <div class="completion-icon">🎉</div>
+        <h3>All done!</h3>
+        <p>You finished every step. That's what progress looks like.</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button type="button" class="btn-primary" onclick="resetApp()">Start a new task</button>
+          <button type="button" class="btn-back" onclick="goToTasks()" style="width:100%;justify-content:center;display:flex;padding:12px">📋 View all tasks</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========== CALENDAR SCREEN ========== -->
+  <div id="screen-calendar" class="screen">
+    <div class="cal-layout">
+
+      <!-- Left: Monthly calendar grid -->
+      <div class="cal-main">
+        <header class="cal-header">
+          <div class="cal-header-left">
+            <h2 class="cal-month-title" id="cal-month-title"></h2>
+            <span class="cal-today-badge" id="cal-today-badge"></span>
+          </div>
+          <div class="cal-nav">
+            <button class="cal-nav-btn" id="cal-prev" type="button" aria-label="Previous month" onclick="calNavigate(-1)">&#8249;</button>
+            <button class="cal-nav-btn cal-nav-today" id="cal-today-btn" type="button" onclick="calGoToday()">Today</button>
+            <button class="cal-nav-btn" id="cal-next" type="button" aria-label="Next month" onclick="calNavigate(1)">&#8250;</button>
+          </div>
+        </header>
+
+        <!-- Day-of-week headers: Mon → Sun -->
+        <div class="cal-dow-row">
+          <div class="cal-dow">Mon</div>
+          <div class="cal-dow">Tue</div>
+          <div class="cal-dow">Wed</div>
+          <div class="cal-dow">Thu</div>
+          <div class="cal-dow">Fri</div>
+          <div class="cal-dow cal-dow-weekend">Sat</div>
+          <div class="cal-dow cal-dow-weekend">Sun</div>
+        </div>
+
+        <!-- Cells injected by JS -->
+        <div class="cal-grid" id="cal-grid" role="grid" aria-label="Calendar"></div>
+      </div>
+
+      <!-- Right: Day detail panel -->
+      <aside class="cal-panel" id="cal-panel" aria-label="Day details">
+        <div class="cal-panel-inner" id="cal-panel-inner">
+          <!-- Populated by JS when a day is selected -->
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- ========== TASKS SCREEN ========== -->
+  <div id="screen-tasks" class="screen">
+    <div class="container">
+
+      <header class="tasks-header">
+        <h2 class="tasks-title">Your Tasks</h2>
+        <p class="tasks-subtitle">Manage, snooze, and resume your work.</p>
+      </header>
+
+      <!-- JS renders 4 sections here: Active / Pending / Snoozed / Completed -->
+      <div id="tasks-body"></div>
+
+    </div>
+  </div>
+
+  <!-- ========== STATS SCREEN ========== -->
+  <div id="screen-stats" class="screen">
+    <div class="container">
+
+      <header class="stats-header">
+        <h2 class="stats-title">Your Stats</h2>
+        <p class="stats-subtitle">Track your momentum over time.</p>
+      </header>
+
+      <!-- JS renders the full dashboard here -->
+      <div id="stats-body"></div>
+
+    </div>
+  </div>
+
+  <!-- ========== LEAVE TASK OVERLAY (gentle warning) ========== -->
+  <div class="modal-overlay" id="leave-task-overlay" style="display:none">
+    <div class="modal-card leave-task-card">
+      <div class="modal-header">
+        <span class="modal-icon">💬</span>
+        <div>
+          <div class="modal-title">Still working on this?</div>
+          <div class="modal-sub">You're in the middle of a task. What would you like to do?</div>
+        </div>
+      </div>
+      <div class="leave-task-btns">
+        <button class="leave-btn leave-btn-continue" type="button" onclick="dismissLeaveOverlay('continue')">
+          ✅ Keep going
+        </button>
+        <button class="leave-btn leave-btn-snooze" type="button" onclick="dismissLeaveOverlay('snooze')">
+          😴 Snooze this task
+        </button>
+        <button class="leave-btn leave-btn-leave" type="button" onclick="dismissLeaveOverlay('leave')">
+          → Leave anyway
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SNOOZE MODAL ========== -->
+  <div class="modal-overlay" id="snooze-modal" style="display:none" onclick="closeSnoozeModal(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-icon">😴</span>
+        <div>
+          <div class="modal-title">Snooze this task</div>
+          <div class="modal-sub">Take a break. The task will remind you when time's up.</div>
+        </div>
+      </div>
+      <div class="snooze-chips">
+        <button class="snooze-chip" type="button" onclick="confirmSnooze(15 * 60 * 1000)">⏱ 15 min</button>
+        <button class="snooze-chip" type="button" onclick="confirmSnooze(30 * 60 * 1000)">⏱ 30 min</button>
+        <button class="snooze-chip" type="button" onclick="confirmSnooze(60 * 60 * 1000)">⏱ 1 hour</button>
+        <button class="snooze-chip" type="button" onclick="confirmSnooze(2 * 60 * 60 * 1000)">⏱ 2 hours</button>
+        <button class="snooze-chip snooze-chip-tomorrow" type="button" onclick="confirmSnoozeTomorrow()">🌅 Tomorrow morning (8 AM)</button>
+      </div>
+      <button class="modal-cancel" type="button" onclick="closeSnoozeModal()">Cancel — keep working</button>
+    </div>
+  </div>
+
+  <!-- ========== FOCUS LOCK OVERLAY (Level 3 nudge) ========== -->
+  <div class="focus-lock-overlay" id="focus-lock-overlay" style="display:none">
+    <div class="focus-lock-card">
+      <span class="focus-lock-icon">🔒</span>
+      <div class="focus-lock-title">You've gone quiet.</div>
+      <div class="focus-lock-msg">You haven't moved in a while. What do you want to do?</div>
+      <div class="focus-lock-btns">
+        <button class="btn-primary focus-lock-continue" type="button" onclick="dismissFocusLock('continue')">
+          ✅ I'm back — continue
+        </button>
+        <button class="btn-focus-snooze" type="button" onclick="dismissFocusLock('snooze')">
+          😴 Snooze this task
+        </button>
+        <button class="btn-focus-skip" type="button" onclick="dismissFocusLock('skip')">
+          ↷ Skip this step
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== COMPLETION CELEBRATION OVERLAY ========== -->
+  <div class="celebration-overlay" id="celebration-overlay" style="display:none" aria-hidden="true">
+    <div class="celebration-glow"></div>
+    <div class="celebration-content">
+      <div class="celebration-ring" id="celebration-ring"></div>
+      <div class="celebration-headline">You did it.</div>
+      <div class="celebration-sub">Respect.</div>
+    </div>
+  </div>
+
+  <!-- ========== AI COACH — conversational entry point ========== -->
+  <div class="ai-coach-overlay" id="ai-coach-overlay" style="display:none" onclick="handleAICoachOverlayClick(event)">
+    <div class="ai-coach-panel ai-coach-conv" id="ai-coach-panel" data-testid="ai-coach-panel">
+      <div class="acp-handle" aria-hidden="true"></div>
+
+      <div class="acp-conv-header">
+        <div class="acp-avatar acp-avatar-conv" aria-hidden="true">
+          <span class="acp-avatar-spark"></span>
+          ⚡
+        </div>
+        <div class="acp-conv-titles">
+          <div class="acp-title">AI Coach</div>
+          <div class="acp-sub"><span class="acp-status-dot"></span> Online · ready to plan</div>
+        </div>
+        <button class="acp-close" type="button" onclick="closeAICoach()" aria-label="Close AI Coach" data-testid="ai-coach-close">✕</button>
+      </div>
+
+      <!-- Conversation thread — messages injected by JS -->
+      <div class="acp-conv-thread" id="acp-conv-thread" data-testid="ai-coach-thread" aria-live="polite"></div>
+
+      <!-- Composer -->
+      <form class="acp-composer" id="acp-composer" onsubmit="event.preventDefault(); sendCoachMessage();">
+        <input
+          type="text"
+          class="acp-input"
+          id="acp-input"
+          placeholder="What would you like to accomplish?"
+          autocomplete="off"
+          maxlength="300"
+          data-testid="ai-coach-input"
+          disabled
+        />
+        <button class="acp-mic" id="acp-mic" type="button" aria-label="Voice input" data-testid="ai-coach-mic" onclick="toggleVoiceInput()" title="Voice input">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor"/>
+            <path d="M5 10a7 7 0 0014 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="9" y1="21" x2="15" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="acp-mic-pulse" id="acp-mic-pulse" aria-hidden="true"></span>
+        </button>
+        <button class="acp-send" id="acp-send" type="submit" aria-label="Send message" data-testid="ai-coach-send" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 12h15M13 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========== NAME CAPTURE MODAL — first-time AI Coach open ========== -->
+  <div class="modal-overlay name-prompt-overlay" id="name-prompt-overlay" style="display:none">
+    <div class="modal-card name-prompt-card" data-testid="name-prompt-card">
+      <div class="np-emoji" aria-hidden="true">👋</div>
+      <div class="np-title">Hey there!</div>
+      <div class="np-sub">Before we start, what should I call you?</div>
+      <form id="np-form" onsubmit="event.preventDefault(); saveUserName();">
+        <input
+          type="text"
+          id="user-name-input"
+          class="np-input"
+          placeholder="Your name"
+          maxlength="40"
+          autocomplete="given-name"
+          data-testid="user-name-input"
+        />
+        <button type="submit" class="np-submit" data-testid="user-name-submit">
+          Continue <span class="np-arrow">→</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========== WHAT NEXT PANEL ========== -->
+  <div class="what-next-overlay" id="what-next-overlay" style="display:none" onclick="handleWhatNextOverlayClick(event)">
+    <div class="what-next-panel" id="what-next-panel">
+      <div class="wnp-handle"></div>
+      <div class="wnp-header">
+        <div class="wnp-title">What's next?</div>
+        <div class="wnp-sub">You just finished something real. Keep the momentum.</div>
+      </div>
+      <div class="wnp-actions" id="wnp-actions">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== TASK INPUT MODAL ========== -->
+  <div class="task-input-modal" id="task-input-modal" onclick="handleTaskModalClick(event)" style="display:none">
+    <div class="tim-card" id="tim-card">
+
+      <!-- STEP 1: Task text -->
+      <div id="tim-step-1">
+        <div class="tim-header">
+          <div class="tim-title">What do you need to get done?</div>
+          <button class="tim-close" type="button" onclick="closeTaskInput()">✕</button>
+        </div>
+        <textarea id="task-input" class="task-input tim-textarea"
+          placeholder="e.g. Finish my science project due tomorrow..."
+          rows="4" maxlength="200"></textarea>
+        <div class="char-count tim-char"><span id="char-count">0</span>/200</div>
+        <button id="btn-next-step" type="button" class="btn-primary tim-btn" onclick="showScheduleStep()">
+          <span class="btn-icon">→</span> Set schedule &amp; plan
+        </button>
+        <button type="button" class="btn-skip-schedule" onclick="planTask()" style="margin-top:6px">Skip schedule, plan now</button>
+      </div>
+
+      <!-- STEP 2: Schedule picker -->
+      <div id="tim-step-2" style="display:none">
+        <div class="tim-header">
+          <button class="tim-close tim-back" type="button" onclick="showTaskStep()">← Back</button>
+          <div class="tim-title tim-title-sched">When are you working on this?</div>
+          <button class="tim-close" type="button" onclick="closeTaskInput()">✕</button>
+        </div>
+        <p class="tim-sched-sub">Set a date, time, and focus duration per step.</p>
+        <div class="spc-fields" style="margin-bottom:14px">
+          <div class="spc-field">
+            <label class="spc-label">Date</label>
+            <input type="date" id="sched-date" class="spc-input" />
+          </div>
+          <div class="spc-field">
+            <label class="spc-label">Start Time</label>
+            <input type="time" id="sched-time" class="spc-input" value="09:00" />
+          </div>
+        </div>
+        <div class="spc-dur-section">
+          <label class="spc-label">Focus per step</label>
+          <div class="dur-chips" id="tim-dur-chips"></div>
+          <div class="dur-custom-row">
+            <input type="number" id="sched-custom-dur" class="spc-input spc-input-sm"
+              placeholder="Or type a custom duration (min)" min="1" max="180"
+              oninput="handleCustomDurInput(this.value)" />
+          </div>
+        </div>
+        <button type="button" class="btn-save-schedule" onclick="saveScheduleAndPlan()" style="margin-top:14px">Set Schedule &amp; Start Planning →</button>
+        <button type="button" class="btn-skip-schedule" onclick="planTask()">Skip for now</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="calendar.js"></script>
+</body>
+
+</html>
