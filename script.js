@@ -980,7 +980,7 @@ Generate ${range.min}–${range.max} steps. Each step must be specific to: "${ta
     };
   }
 
-  // ── Try Gemini models in waterfall order ────────────────────────
+  // ── Send the plan prompt through the secure backend ──────────────
   async function tryModels() {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30000);
