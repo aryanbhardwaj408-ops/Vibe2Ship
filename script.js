@@ -1,6 +1,6 @@
-// ⚠️ Replace with your real Google AI Studio key (starts with "AIza...")
-// Get one free at: https://aistudio.google.com/app/apikey
-const API_KEY = "AQ.Ab8RN6JL76zvx-DiU_ij06F4cF9HfNfgCJ5vwegpXWgH3iUxAA";
+// API keys must never be stored in client-side code.
+// Configure GEMINI_API_KEY on a backend server and call that server from the frontend.
+const API_KEY = "";
 /* ============================================================
    NUDGE AI — script.js
    Core app logic: task store, task state machine, snooze/resume,
