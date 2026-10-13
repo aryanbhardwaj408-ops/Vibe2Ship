@@ -54,7 +54,7 @@ This repository includes a render.yaml Blueprint for the combined frontend + bac
 ## Security notes
 
 - If a Gemini key has been committed to a public repository, revoke it and review its usage. Removing it from the latest source does **not** erase it from older commits.
-- The in-process rate limiter is a best-effort demo guard. Use a shared/distributed limiter or hosting/API-gateway protections for multi-worker or production deployments.
+- The in-process rate limiter is a best-effort demo guard. Render's start command trusts forwarded client headers from its ingress proxy so limits can be applied per client IP. Use a shared/distributed limiter or hosting/API-gateway protections for multi-worker or production deployments.
 - Keep API access restricted and monitor Gemini usage and quotas before sharing a public demo.
 
 ## Repository layout
