@@ -11,15 +11,18 @@
 
 const TASKS_KEY = "nudge_tasks";
 
-// ── Clean-slate initializer ─────────────────────────────────────────────
-// Wipes ALL local storage when the app version changes (or on first run).
-// Guarantees judges / new users always see an empty, ready state.
+// ── Versioned app-data initializer ──────────────────────────────────────
+// Reset Nudge-owned data on version changes without clearing other apps'
+// localStorage entries on the same origin.
 (function _ensureCleanSlate() {
-  const APP_VERSION   = "1.0.0";
-  const VERSION_KEY   = "nudge_app_version";
+  const APP_VERSION = "1.1.0";
+  const VERSION_KEY = "nudge_app_version";
   const storedVersion = localStorage.getItem(VERSION_KEY);
   if (storedVersion !== APP_VERSION) {
-    localStorage.clear();
+    for (let index = localStorage.length - 1; index >= 0; index--) {
+      const key = localStorage.key(index);
+      if (key && key.startsWith("nudge_")) localStorage.removeItem(key);
+    }
     localStorage.setItem(VERSION_KEY, APP_VERSION);
   }
 })();
