@@ -4,7 +4,7 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from fastapi import FastAPI, HTTPException, Request as FastAPIRequest
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,7 @@ def root():
 
 
 @app.post("/api/plan")
-def generate_plan(payload: PlanRequest, request: FastAPIRequest):
+def generate_plan(payload: PlanRequest):
     """Proxy the prompt to Gemini without exposing the API key to the browser."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
