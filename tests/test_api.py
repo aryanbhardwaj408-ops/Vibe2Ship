@@ -136,8 +136,8 @@ def test_frontend_never_calls_gemini_directly():
     assert 'fetch("/api/plan"' in source
     assert "generativelanguage.googleapis.com" not in source
     assert "x-goog-api-key" not in source
-    assert not re.search(r"(?:AIza|AQ\\.)[A-Za-z0-9._-]{20,}", source)
-    assert not re.search(r"const\\s+API_KEY\\s*=", source)
+    assert not re.search(r"(?:AIza|AQ\.)[A-Za-z0-9._-]{20,}", source)
+    assert not re.search(r"const\s+API_KEY\s*=", source)
 
 
 def test_user_visible_ai_text_is_escaped_before_html_insertion():
