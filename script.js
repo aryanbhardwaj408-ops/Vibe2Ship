@@ -3230,7 +3230,7 @@ async function sendCoachMessage() {
 
   function _voiceError(msg) {
     // Show error as a coach bubble (reuses existing pattern, no alert())
-    _appendCoachBubble(`<span style="color:#ef4444;font-size:0.88rem;">🎤 ${msg}</span>`);
+    _appendCoachBubble(`<span style="color:#ef4444;font-size:0.88rem;">🎤 ${escapeHtml(msg)}</span>`);
   }
 
   function _stop() {
@@ -3450,7 +3450,7 @@ async function _runReasoningForGoal(goalText) {
       chipRow.innerHTML = `<div class="acp-msg-avatar" aria-hidden="true">⚡</div>
         <div class="acp-msg-bubble acp-msg-actions" style="gap:8px">
           <div class="acp-actions-label">${escapeHtml(clarChipsStd.question)}</div>
-          <div class="acp-chip-row">${clarChipsStd.options.map(c => `<button type="button" class="acp-chip acp-clarif-chip" data-testid="ai-coach-clarif-${c.replace(/\s+/g,'-').toLowerCase()}">${c}</button>`).join('')}</div>
+          <div class="acp-chip-row">${clarChipsStd.options.map(c => `<button type="button" class="acp-chip acp-clarif-chip" data-testid="ai-coach-clarif-${escapeHtml(c.replace(/\s+/g,'-').toLowerCase())}">${escapeHtml(c)}</button>`).join('')}</div>
         </div>`;
       thread.appendChild(chipRow);
       thread.scrollTop = thread.scrollHeight;
