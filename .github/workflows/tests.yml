@@ -1,4 +1,4 @@
-name: Backend checks
+name: Backend and frontend checks
 
 on:
   push:
@@ -17,9 +17,15 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
-      - name: Install dependencies
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Python dependencies
         run: python -m pip install -r backend/requirements-dev.txt
       - name: Compile Python files
         run: python -m compileall -q backend tests
+      - name: Check frontend JavaScript syntax
+        run: node --check script.js && node --check calendar.js
       - name: Run tests
         run: python -m pytest -q
