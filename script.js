@@ -1,6 +1,4 @@
-// API keys must never be stored in client-side code.
-// Configure GEMINI_API_KEY on a backend server and call that server from the frontend.
-const API_KEY = "";
+// Gemini requests are made by the backend; never put API keys in this file.
 /* ============================================================
    NUDGE AI — script.js
    Core app logic: task store, task state machine, snooze/resume,
@@ -644,10 +642,7 @@ TASK: "${taskText}"
 
 Generate ${range.min}–${range.max} steps. Each step must be specific to: "${taskText}"`;
 
-  const MODELS  = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"];
-  const BASE    = "https://generativelanguage.googleapis.com/v1beta/models";
-  const BODY    = JSON.stringify({ contents: [{ parts: [{ text: jsonPrompt }] }] });
-  const HEADERS = { "Content-Type": "application/json", "x-goog-api-key": API_KEY };
+  // The backend owns the Gemini key and forwards this prompt securely.
 
   // ── Fully-structured offline fallbacks — all 25 domains ─────────
   const STRUCTURED_FALLBACK = {
@@ -987,40 +982,42 @@ Generate ${range.min}–${range.max} steps. Each step must be specific to: "${ta
 
   // ── Try Gemini models in waterfall order ────────────────────────
   async function tryModels() {
-    for (const model of MODELS) {
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 9000);
-        const response = await fetch(
-          `${BASE}/${model}:generateContent?key=${API_KEY}`,
-          { method: "POST", headers: HEADERS, body: BODY, signal: controller.signal }
-        );
-        clearTimeout(timer);
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({}));
-          console.warn(`[Nudge AI] ${model} failed (${response.status}):`, err?.error?.message);
-          continue;
-        }
-        const data    = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        const parsed  = parseStructuredResponse(rawText, range.min, range.max);
-        if (parsed && parsed.steps.length >= range.min) {
-          console.log(`[Nudge AI] ✓ ${model} → ${parsed.steps.length} structured steps, domain:${domain}, persona:${persona}`);
-          return parsed;
-        }
-        console.warn(`[Nudge AI] ${model} returned insufficient structured output — trying next model.`);
-      } catch (e) {
-        console.warn(`[Nudge AI] ${model} error (${e.name}):`, e.message);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+      const response = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: jsonPrompt }),
+        signal: controller.signal
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        console.warn("[Nudge AI] Backend request failed:", err.detail || response.statusText);
+        return null;
       }
+
+      const data = await response.json();
+      const parsed = parseStructuredResponse(data.text || "", range.min, range.max);
+      if (parsed && parsed.steps.length >= range.min) {
+        console.log(`[Nudge AI] ✓ backend → ${parsed.steps.length} structured steps, domain:${domain}, persona:${persona}`);
+        return parsed;
+      }
+      console.warn("[Nudge AI] Backend returned insufficient structured output.");
+      return null;
+    } catch (e) {
+      console.warn("[Nudge AI] Backend error:", e.name, e.message);
+      return null;
+    } finally {
+      clearTimeout(timer);
     }
-    return null;
   }
 
   let planData = null;
   try {
     planData = await Promise.race([
       tryModels(),
-      new Promise(resolve => setTimeout(() => resolve(null), 16000)),
+      new Promise(resolve => setTimeout(() => resolve(null), 32000)),
     ]);
   } catch (e) {
     console.warn("[Nudge AI] Unexpected error:", e);
