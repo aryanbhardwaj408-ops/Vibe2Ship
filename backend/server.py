@@ -7,9 +7,11 @@ from urllib.request import Request, urlopen
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
 
 # The repository root contains index.html, script.js, and the CSS/JS assets.
 APP_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(APP_ROOT / ".env")
 
 app = FastAPI(title="Nudge AI API")
 
