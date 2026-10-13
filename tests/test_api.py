@@ -125,3 +125,25 @@ def test_rate_limit_returns_429_after_ten_requests(client, monkeypatch):
     assert all(response.status_code == 200 for response in responses[:-1])
     assert responses[-1].status_code == 429
     assert int(responses[-1].headers["retry-after"]) > 0
+
+
+
+def test_frontend_never_calls_gemini_directly():
+    from pathlib import Path
+    import re
+
+    source = (Path(__file__).resolve().parents[1] / "script.js").read_text(encoding="utf-8")
+    assert 'fetch("/api/plan"' in source
+    assert "generativelanguage.googleapis.com" not in source
+    assert "x-goog-api-key" not in source
+    assert not re.search(r"(?:AIza|AQ\\.)[A-Za-z0-9._-]{20,}", source)
+    assert not re.search(r"const\\s+API_KEY\\s*=", source)
+
+
+def test_user_visible_ai_text_is_escaped_before_html_insertion():
+    from pathlib import Path
+
+    source = (Path(__file__).resolve().parents[1] / "script.js").read_text(encoding="utf-8")
+    assert "escapeHtml(step.label)" in source
+    assert "escapeHtml(pm.expertPersona)" in source
+    assert "localStorage.clear()" not in source
