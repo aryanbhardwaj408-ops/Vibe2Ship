@@ -11,7 +11,7 @@ Nudge AI is a task-planning web app. The frontend sends planning prompts to a Fa
    pip install -r backend/requirements.txt
    ```
 
-3. Set a new Gemini API key as an environment variable. Never paste a real key into frontend code or commit it.
+3. Copy `.env.example` to `.env` in the repository root and put your new Gemini key in the local `.env` file. The `.env` file is ignored by Git. Never paste a real key into frontend code or commit it. Alternatively, set the environment variable directly:
 
    macOS / Linux:
    ```bash
