@@ -3,7 +3,7 @@ services:
     name: nudge-ai
     runtime: python
     buildCommand: python -m pip install -r backend/requirements.txt
-    startCommand: python -m uvicorn backend.server:app --host 0.0.0.0 --port $PORT
+    startCommand: python -m uvicorn backend.server:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
     healthCheckPath: /api/
     envVars:
       - key: GEMINI_API_KEY
