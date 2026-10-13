@@ -3365,7 +3365,7 @@ async function _runReasoningForGoal(goalText) {
         chipRow.innerHTML = `<div class="acp-msg-avatar" aria-hidden="true">⚡</div>
           <div class="acp-msg-bubble acp-msg-actions" style="gap:8px">
             <div class="acp-actions-label">Pick a focus for today:</div>
-            <div class="acp-chip-row" id="acp-clarif-chip-row-lt">${clarChips.map(c => `<button type="button" class="acp-chip acp-clarif-chip" data-testid="ai-coach-clarif-${c.replace(/\s+/g,'-').toLowerCase()}">${c}</button>`).join('')}</div>
+            <div class="acp-chip-row" id="acp-clarif-chip-row-lt">${clarChips.map(c => `<button type="button" class="acp-chip acp-clarif-chip" data-testid="ai-coach-clarif-${c.replace(/\s+/g,'-').toLowerCase()}">${escapeHtml(c)}</button>`).join('')}</div>
           </div>`;
         thread.appendChild(chipRow);
         thread.scrollTop = thread.scrollHeight;
@@ -3449,7 +3449,7 @@ async function _runReasoningForGoal(goalText) {
       chipRow.className = 'acp-msg-row acp-msg-coach acp-clarif-row';
       chipRow.innerHTML = `<div class="acp-msg-avatar" aria-hidden="true">⚡</div>
         <div class="acp-msg-bubble acp-msg-actions" style="gap:8px">
-          <div class="acp-actions-label">${clarChipsStd.question}</div>
+          <div class="acp-actions-label">${escapeHtml(clarChipsStd.question)}</div>
           <div class="acp-chip-row">${clarChipsStd.options.map(c => `<button type="button" class="acp-chip acp-clarif-chip" data-testid="ai-coach-clarif-${c.replace(/\s+/g,'-').toLowerCase()}">${c}</button>`).join('')}</div>
         </div>`;
       thread.appendChild(chipRow);
@@ -3908,11 +3908,12 @@ function renderTaskCard(task) {
 }
 
 function escapeHtml(str) {
-  return str
+  return String(str ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // ================================================================
@@ -4167,11 +4168,11 @@ function renderTaskScreen() {
     }
     const difficultyIcon = { Easy: "🟢", Medium: "🟡", Hard: "🔴" };
     metaPill.innerHTML = `
-      <span class="pmp-persona">🧠 ${pm.expertPersona}</span>
+      <span class="pmp-persona">🧠 ${escapeHtml(pm.expertPersona)}</span>
       <span class="pmp-divider">·</span>
-      <span class="pmp-time">⏱ ~${pm.estimatedCompletionTime}</span>
+      <span class="pmp-time">⏱ ~${escapeHtml(pm.estimatedCompletionTime)}</span>
       <span class="pmp-divider">·</span>
-      <span class="pmp-complexity">${pm.complexity}</span>
+      <span class="pmp-complexity">${escapeHtml(pm.complexity)}</span>
     `;
   }
 
@@ -4205,15 +4206,15 @@ function renderTaskScreen() {
     const hasMeta = step.duration || step.difficulty;
     const metaBadges = hasMeta ? `
       <div class="step-meta-row">
-        ${step.duration ? `<span class="step-badge step-badge-dur">⏱ ${step.duration}</span>` : ""}
-        ${step.difficulty ? `<span class="step-badge ${diffBadgeCls[step.difficulty] || ''}">● ${step.difficulty}</span>` : ""}
+        ${step.duration ? `<span class="step-badge step-badge-dur">⏱ ${escapeHtml(step.duration)}</span>` : ""}
+        ${step.difficulty ? `<span class="step-badge ${diffBadgeCls[step.difficulty] || ''}">● ${escapeHtml(step.difficulty)}</span>` : ""}
       </div>` : "";
 
     if (step.skipped) {
       li.innerHTML = `
         <div class="step-checkbox step-skipped-icon">↷</div>
         <div class="step-content">
-          <span class="step-label">${step.label}</span>
+          <span class="step-label">${escapeHtml(step.label)}</span>
           <button type="button" class="btn-restore" onclick="restoreStep(${i})">Restore</button>
         </div>
       `;
@@ -4221,7 +4222,7 @@ function renderTaskScreen() {
       li.innerHTML = `
         <div class="step-checkbox" id="checkbox-${i}">${step.done ? "✔" : ""}</div>
         <div class="step-content">
-          <span class="step-label" id="label-${i}">${step.label}</span>
+          <span class="step-label" id="label-${i}">${escapeHtml(step.label)}</span>
           ${metaBadges}
         </div>
       `;
@@ -4314,7 +4315,7 @@ function nextStep() {
     li.className = "step-item skipped";
     li.innerHTML = `
       <div class="step-checkbox step-skipped-icon">↷</div>
-      <span class="step-label">${state.steps[idx].label}</span>
+      <span class="step-label">${escapeHtml(state.steps[idx].label)}</span>
       <button type="button" class="btn-restore" onclick="restoreStep(${idx})">Restore</button>
     `;
   }
@@ -4370,7 +4371,7 @@ function restoreStep(index) {
     li.className = "step-item active";
     li.innerHTML = `
       <div class="step-checkbox" id="checkbox-${index}"></div>
-      <span class="step-label" id="label-${index}">${state.steps[index].label}</span>
+      <span class="step-label" id="label-${index}">${escapeHtml(state.steps[index].label)}</span>
     `;
     li.addEventListener("click", () => handleStepClick(index));
   }
