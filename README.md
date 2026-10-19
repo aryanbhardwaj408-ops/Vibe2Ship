@@ -126,7 +126,9 @@ The repository includes a `render.yaml` Blueprint for running the frontend and F
 
 ### Vercel or another host
 
-The frontend currently calls the relative path `/api/plan`, so the deployed site must route that request to a server-side FastAPI endpoint (or a compatible backend adapter). The repository currently contains the Render Blueprint but does not include a `vercel.json` file or a Vercel-specific serverless adapter. If your Vercel project uses separate routing or a separate backend, document that configuration alongside the deployment and keep the API key only in the backend's server-side environment—not in browser-visible variables.
+The live demo is deployed at [vibe2-ship-wheat.vercel.app](https://vibe2-ship-wheat.vercel.app). The frontend calls the relative path `/api/plan`, so the deployed site must route that request to a server-side FastAPI endpoint or compatible backend adapter.
+
+This repository currently includes the Render Blueprint but does not include a `vercel.json` file or a Vercel-specific serverless adapter. The live Vercel deployment therefore depends on routing/backend configuration that is not fully reproducible from this repository alone. For a repeatable deployment, add the applicable Vercel routing or adapter configuration to the repo, or document the separate backend and rewrite settings used by the deployment. In all cases, keep `GEMINI_API_KEY` only in the backend's server-side environment—not in browser-visible variables.
 
 ## Important limitations
 
