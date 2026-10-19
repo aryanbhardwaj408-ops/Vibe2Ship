@@ -2,6 +2,8 @@
 
 **Turn a vague goal into a practical plan, then follow through.**
 
+**Live demo:** [Try Nudge AI](https://vibe2-ship-wheat.vercel.app) · **Source code:** [GitHub repository](https://github.com/aryanbhardwaj408-ops/Vibe2Ship)
+
 Nudge AI is an AI-powered task-execution coach built as a Vibe2Ship hackathon project. It helps turn a goal into structured steps and combines planning with the tools needed to actually do the work: task tracking, focus sessions, scheduling, snoozing, and progress statistics.
 
 ## Features
