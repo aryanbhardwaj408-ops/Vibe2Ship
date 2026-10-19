@@ -1,67 +1,150 @@
-# Nudge AI — Vibe2Ship Hackathon Project
+# Nudge AI
 
-Nudge AI is a task-execution coach designed to turn a vague task into a practical, step-by-step plan. The interface includes task tracking, focus timers, snoozing, progress/streak statistics, mood feedback, and domain-specific offline fallback plans.
+**Turn a vague goal into a practical plan, then follow through.**
+
+Nudge AI is an AI-powered task-execution coach built as a Vibe2Ship hackathon project. It helps turn a goal into structured steps and combines planning with the tools needed to actually do the work: task tracking, focus sessions, scheduling, snoozing, and progress statistics.
 
 ## Features
 
-- **AI task planning:** Generates structured steps, durations, difficulty levels, and coaching tips with Gemini.
-- **Task workflow:** Create tasks, mark steps complete, skip or snooze steps, and resume work.
-- **Focus support:** Focus/session timers, progress tracking, and daily streaks.
-- **Offline fallback:** Domain-specific plans remain available when AI generation is unavailable.
-- **Private API key:** Browser code calls the FastAPI /api/plan endpoint; the Gemini key stays in the backend environment.
-- **Basic abuse protection:** The demo API applies a small per-process request limit.
+- **Conversational AI Coach** — clarify a goal and generate a structured plan with Gemini.
+- **Multi-goal planning** — organize multiple tasks into a prioritized queue.
+- **Review before starting** — inspect, edit, or remove proposed steps before committing to a plan.
+- **Task management** — track pending, active, snoozed, and completed tasks; resume work and mark individual steps complete.
+- **Focus and scheduling tools** — set time windows, use focus/session timers, and snooze tasks.
+- **Progress feedback** — view activity, streaks, completion statistics, and mood-related feedback.
+- **Voice input** — use the browser's Speech Recognition API where it is supported and permitted.
+- **Fallback plans** — continue with domain-specific starter plans if the AI endpoint is unavailable.
 
 ## Tech stack
 
-- HTML, CSS, vanilla JavaScript
-- Python, FastAPI, Uvicorn
-- Google Gemini API
+| Layer | Technology |
+| --- | --- |
+| Frontend | HTML, CSS, vanilla JavaScript |
+| Backend | Python, FastAPI, Uvicorn |
+| AI | Google Gemini API |
+| Local persistence | Browser `localStorage` |
+| Quality checks | pytest, Node.js syntax checks, GitHub Actions |
+
+## How it works
+
+1. The user describes a task in the browser.
+2. The frontend sends a planning prompt to `POST /api/plan`.
+3. FastAPI reads `GEMINI_API_KEY` from its server-side environment and calls Gemini.
+4. The backend returns the model response to the frontend, which validates the structured plan and prepares the steps.
+5. If the request fails or the response cannot be used, the app can fall back to a built-in domain-specific plan.
+
+**Security boundary:** the current frontend does not call Gemini directly and should never contain a real API key. The secret belongs in the backend environment.
 
 ## Run locally
 
-Requirements: Python 3.10+.
+Requirements: Python 3.10+ and Node.js for the JavaScript syntax checks.
 
-1. Clone the repository and open a terminal in the repository root.
-2. Install backend dependencies:
+1. Clone the repository and enter its root directory:
 
-       python -m pip install -r backend/requirements.txt
+   ```bash
+   git clone https://github.com/aryanbhardwaj408-ops/Vibe2Ship.git
+   cd Vibe2Ship
+   ```
 
-3. Copy .env.example to .env in the repository root and add a **new** Gemini API key to GEMINI_API_KEY. Keep the .env file local; Git ignores it. Never paste a real key into browser code or commit it.
-4. Start the full-stack application:
+2. Create and activate a virtual environment (Windows PowerShell example):
 
-       python -m uvicorn backend.server:app --reload
+   ```powershell
+   py -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   ```
 
-5. Open http://127.0.0.1:8000.
+   On macOS/Linux, use `python3 -m venv .venv` and `source .venv/bin/activate`.
 
-The default model is gemini-3.8-flash. Set GEMINI_MODEL in the environment if you need to use another model available to your Google AI project.
+3. Install backend dependencies:
 
-## Tests
+   ```bash
+   python -m pip install -r backend/requirements.txt
+   ```
 
-Install development dependencies and run the test suite:
+4. Create a local environment file:
 
-    python -m pip install -r backend/requirements-dev.txt
-    python -m pytest -q
+   ```powershell
+   Copy-Item .env.example .env
+   ```
 
-## Deploy on Render
+   Open `.env` and set `GEMINI_API_KEY` to a valid key from your Google AI project. Keep this file local; it is ignored by Git. Do not paste a real key into `script.js`, HTML, CSS, screenshots, or commits.
 
-This repository includes a render.yaml Blueprint for the combined frontend + backend service.
+5. Start the app from the repository root:
 
-1. Import the GitHub repository into Render as a Blueprint.
-2. In the Render service's environment settings, add GEMINI_API_KEY using a newly created, restricted key. Do not commit the key.
-3. Deploy, then open the generated service URL and verify that the health endpoint at /api/ returns {"status":"ok"}.
-4. Test a real AI task from the UI. A successful health check alone does not prove the Gemini key/model/quotas are working.
+   ```bash
+   python -m uvicorn backend.server:app --reload
+   ```
 
-## Security notes
+6. Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
-- If a Gemini key has been committed to a public repository, revoke it and review its usage. Removing it from the latest source does **not** erase it from older commits.
-- The in-process rate limiter is a best-effort demo guard. Render's start command trusts forwarded client headers from its ingress proxy so limits can be applied per client IP. Use a shared/distributed limiter or hosting/API-gateway protections for multi-worker or production deployments.
-- Keep API access restricted and monitor Gemini usage and quotas before sharing a public demo.
+### Environment variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | Yes, for live AI planning | Server-side Gemini API credential. Keep it secret. |
+| `GEMINI_MODEL` | No | Model identifier. Defaults to `gemini-3.8-flash` in the current backend. |
+
+The health endpoint is `GET /api/` and should return `{"status":"ok"}`. A successful health check confirms the API process is reachable; it does not by itself confirm Gemini credentials, model access, or quota.
+
+## Tests and checks
+
+Install the development dependencies:
+
+```bash
+python -m pip install -r backend/requirements-dev.txt
+```
+
+Run the backend tests:
+
+```bash
+python -m pytest -q
+```
+
+Run the additional syntax checks:
+
+```bash
+python -m compileall -q backend tests
+node --check script.js
+node --check calendar.js
+```
+
+GitHub Actions runs the compile checks, frontend JavaScript syntax checks, and pytest suite on pushes and pull requests.
+
+## Deployment
+
+### Render
+
+The repository includes a `render.yaml` Blueprint for running the frontend and FastAPI backend together.
+
+1. Create a Blueprint deployment from this GitHub repository.
+2. Set `GEMINI_API_KEY` in the service's environment settings. Add the value directly in the hosting dashboard; do not commit it.
+3. Optionally set `GEMINI_MODEL` if your Google AI project uses a different supported model.
+4. Deploy and check `/api/` for the health response.
+5. Test an actual planning request from the UI and confirm `POST /api/plan` returns a successful response.
+
+### Vercel or another host
+
+The frontend currently calls the relative path `/api/plan`, so the deployed site must route that request to a server-side FastAPI endpoint (or a compatible backend adapter). The repository currently contains the Render Blueprint but does not include a `vercel.json` file or a Vercel-specific serverless adapter. If your Vercel project uses separate routing or a separate backend, document that configuration alongside the deployment and keep the API key only in the backend's server-side environment—not in browser-visible variables.
+
+## Important limitations
+
+- Tasks and progress are stored in the browser's `localStorage`; there is no account system or cross-device cloud sync in this version.
+- Voice input depends on browser support, permissions, and the browser's speech-recognition service.
+- Built-in fallback plans allow the UI to continue when live AI planning is unavailable. For a deployment check, verify the `/api/plan` network response rather than relying only on seeing steps appear.
+- The in-memory rate limiter is a best-effort demo safeguard. Production use would need shared rate limiting or gateway-level protections, plus monitoring of API usage and quotas.
 
 ## Repository layout
 
-- index.html, style.css, calendar.css, script.js, calendar.js: frontend
-- backend/server.py: FastAPI application and Gemini proxy
-- backend/requirements.txt: runtime dependencies
-- backend/requirements-dev.txt: test/development dependencies
-- tests/test_api.py: backend smoke and proxy tests
-- render.yaml: combined-service deployment configuration
+- `index.html`, `style.css`: main interface
+- `script.js`, `calendar.js`, `calendar.css`: app behavior and calendar UI
+- `backend/server.py`: FastAPI app and Gemini proxy
+- `backend/requirements.txt`: runtime dependencies
+- `backend/requirements-dev.txt`: test dependencies
+- `tests/test_api.py`: backend and API-boundary tests
+- `render.yaml`: Render deployment definition
+- `SECURITY.md`: security policy
+- `memory/PRD.md`: product brief and current requirements
+
+## Security
+
+If a credential is exposed, revoke it with the provider immediately, create a replacement, review usage, and update the backend secret. Removing a secret from the latest source does not remove it from old Git commits; history cleanup is a separate operation. See [SECURITY.md](SECURITY.md) before contributing or reporting a concern.
